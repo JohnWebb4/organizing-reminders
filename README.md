@@ -23,5 +23,5 @@ I use recurring reminders a lot. Sometimes a lot of events occur on the same day
     3. Add "Save File" output with "Reminders" type
     4. Run program
     5. When prompted for save location save to "reminders" folder in this repository
-3. Run program `go run main.go`
+3. Run program. 1st Argument is path to folder `go run main.go ./reminders`
 4. Great success
