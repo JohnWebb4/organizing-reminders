@@ -9,6 +9,33 @@ import (
 	"time"
 )
 
+type ICSKey string
+
+const (
+	ICSKeyUID     ICSKey = "UID"
+	ICSKeySummary ICSKey = "SUMMARY"
+	ICSKeyStatus  ICSKey = "STATUS"
+	ICSKeyDtStart ICSKey = "DTSTART"
+	ICSKeyRRule   ICSKey = "RRULE"
+)
+
+type RRuleKey string
+
+const (
+	RRuleKeyFreq     RRuleKey = "FREQ"
+	RRuleKeyByDay    RRuleKey = "BYDAY"
+	RRuleKeyInterval RRuleKey = "INTERVAL"
+	RRuleKeyBySetPos RRuleKey = "BYSETPOS"
+)
+
+type DTStartLayout string
+
+const (
+	DTStartLayoutDateTimeUTC DTStartLayout = "20060102T150405Z"
+	DTStartLayoutDateTime    DTStartLayout = "20060102T150405"
+	DTStartLayoutDate        DTStartLayout = "20060102"
+)
+
 // RRule holds parsed recurrence rule fields from an RRULE line.
 type RRule struct {
 	Freq     string   // YEARLY, MONTHLY, WEEKLY, DAILY
@@ -71,16 +98,16 @@ func parseICS(path string) (*Reminder, error) {
 		}
 		// DTSTART may have parameters: "DTSTART;VALUE=DATE:20260720"
 		baseKey := strings.SplitN(key, ";", 2)[0]
-		switch baseKey {
-		case "UID":
+		switch ICSKey(baseKey) {
+		case ICSKeyUID:
 			rem.UID = value
-		case "SUMMARY":
+		case ICSKeySummary:
 			rem.Summary = value
-		case "STATUS":
+		case ICSKeyStatus:
 			rem.Status = value
-		case "DTSTART":
+		case ICSKeyDtStart:
 			rem.DtStart = value
-		case "RRULE":
+		case ICSKeyRRule:
 			rem.RRule, err = parseRRule(value)
 			if err != nil {
 				return nil, fmt.Errorf("%s: %w", path, err)
@@ -107,18 +134,18 @@ func parseRRule(value string) (*RRule, error) {
 			continue
 		}
 		key, val := kv[0], kv[1]
-		switch key {
-		case "FREQ":
+		switch RRuleKey(key) {
+		case RRuleKeyFreq:
 			r.Freq = val
-		case "BYDAY":
+		case RRuleKeyByDay:
 			r.ByDay = strings.Split(val, ",")
-		case "INTERVAL":
+		case RRuleKeyInterval:
 			n, err := strconv.Atoi(val)
 			if err != nil {
 				return nil, fmt.Errorf("invalid INTERVAL %q: %w", val, err)
 			}
 			r.Interval = n
-		case "BYSETPOS":
+		case RRuleKeyBySetPos:
 			n, err := strconv.Atoi(val)
 			if err != nil {
 				return nil, fmt.Errorf("invalid BYSETPOS %q: %w", val, err)
@@ -134,7 +161,7 @@ func parseRRule(value string) (*RRule, error) {
 
 // parseDtStart parses an ICS DTSTART value into a time.Time (date-only or datetime).
 func parseDtStart(s string) (time.Time, error) {
-	for _, layout := range []string{"20060102T150405Z", "20060102T150405", "20060102"} {
+	for _, layout := range []string{string(DTStartLayoutDateTimeUTC), string(DTStartLayoutDateTime), string(DTStartLayoutDate)} {
 		if t, err := time.Parse(layout, s); err == nil {
 			return t, nil
 		}

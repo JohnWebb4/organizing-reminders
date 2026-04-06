@@ -5,6 +5,15 @@ import (
 	"time"
 )
 
+type RRuleFrequency string
+
+const (
+	FREQ_DAILY   RRuleFrequency = "DAILY"
+	FREQ_WEEKLY  RRuleFrequency = "WEEKLY"
+	FREQ_MONTHLY RRuleFrequency = "MONTHLY"
+	FREQ_YEARLY  RRuleFrequency = "YEARLY"
+)
+
 var weekdays = map[string]time.Weekday{
 	"SU": time.Sunday,
 	"MO": time.Monday,
@@ -41,15 +50,15 @@ func nthWeekdayInMonth(year int, month time.Month, byDay []string, bySetPos int)
 func findOccurrences(dtStart time.Time, rr *RRule, windowStart time.Time, windowEnd time.Time) []time.Time {
 	var results []time.Time
 
-	switch rr.Freq {
-	case "DAILY":
+	switch RRuleFrequency(rr.Freq) {
+	case FREQ_DAILY:
 		for t := dtStart; !t.After(windowEnd); t = t.AddDate(0, 0, rr.Interval) {
 			if !t.Before(windowStart) {
 				results = append(results, t)
 			}
 		}
 
-	case "WEEKLY":
+	case FREQ_WEEKLY:
 		if len(rr.ByDay) == 0 {
 			for t := dtStart; !t.After(windowEnd); t = t.AddDate(0, 0, 7*rr.Interval) {
 				if !t.Before(windowStart) {
@@ -74,7 +83,7 @@ func findOccurrences(dtStart time.Time, rr *RRule, windowStart time.Time, window
 			}
 		}
 
-	case "MONTHLY":
+	case FREQ_MONTHLY:
 		year, month, _ := dtStart.Date()
 		if len(rr.ByDay) > 0 && rr.BySetPos != 0 {
 			for m := time.Date(year, month, 1, 0, 0, 0, 0, time.UTC); !m.After(windowEnd); m = m.AddDate(0, rr.Interval, 0) {
@@ -92,7 +101,7 @@ func findOccurrences(dtStart time.Time, rr *RRule, windowStart time.Time, window
 			}
 		}
 
-	case "YEARLY":
+	case FREQ_YEARLY:
 		for t := dtStart; !t.After(windowEnd); t = t.AddDate(rr.Interval, 0, 0) {
 			if !t.Before(windowStart) {
 				results = append(results, t)

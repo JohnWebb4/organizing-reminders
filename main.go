@@ -8,6 +8,8 @@ import (
 	"time"
 )
 
+const DAYS_LIMIT = 20
+
 func main() {
 	if len(os.Args) < 2 {
 		fmt.Fprintln(os.Stderr, "usage: organizing-reminders <folder>")
@@ -33,7 +35,7 @@ func main() {
 		}
 	}
 
-	fmt.Printf("Loaded %d reminders\n", len(reminders))
+	fmt.Printf("Loaded %d reminders\n\n", len(reminders))
 
 	// Build day → reminders map over the next year.
 	now := time.Now().UTC()
@@ -64,12 +66,12 @@ func main() {
 		return stats[i].day < stats[j].day
 	})
 
-	// Print top 10.
-	fmt.Println("\nTop 10 busiest days:")
-	limit := 20
-	if len(stats) < limit {
+	// Print top x busiest days.
+	limit := DAYS_LIMIT
+	if len(stats) < DAYS_LIMIT {
 		limit = len(stats)
 	}
+	fmt.Printf("Top %d busiest days:\n", limit)
 	for _, s := range stats[:limit] {
 		fmt.Printf("  %s — %d reminders\n", s.day, s.count)
 	}
