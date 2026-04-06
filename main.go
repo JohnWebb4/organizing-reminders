@@ -4,7 +4,11 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"sort"
+	"time"
 )
+
+const DAYS_LIMIT = 20
 
 func main() {
 	if len(os.Args) < 2 {
@@ -26,12 +30,49 @@ func main() {
 			fmt.Fprintf(os.Stderr, "warning: skipping %s: %v\n", path, err)
 			continue
 		}
-
 		if rem.Status != "COMPLETED" {
-			fmt.Printf("Reminder: %s\n", rem)
 			reminders = append(reminders, rem)
 		}
 	}
 
-	fmt.Printf("Loaded %d reminders\n", len(reminders))
+	fmt.Printf("Loaded %d reminders\n\n", len(reminders))
+
+	// Build day → reminders map over the next year.
+	now := time.Now().UTC()
+	windowStart := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.UTC)
+	windowEnd := windowStart.AddDate(1, 0, 0)
+
+	dayMap := make(map[string][]*Reminder)
+	for _, rem := range reminders {
+		for _, occ := range rem.Occurrences(windowStart, windowEnd) {
+			key := occ.Format(time.DateOnly)
+			dayMap[key] = append(dayMap[key], rem)
+		}
+	}
+
+	// Sort days by descending occurrence count.
+	type dayStat struct {
+		day   string
+		count int
+	}
+	stats := make([]dayStat, 0, len(dayMap))
+	for day, rems := range dayMap {
+		stats = append(stats, dayStat{day, len(rems)})
+	}
+	sort.Slice(stats, func(i, j int) bool {
+		if stats[i].count != stats[j].count {
+			return stats[i].count > stats[j].count
+		}
+		return stats[i].day < stats[j].day
+	})
+
+	// Print top x busiest days.
+	limit := DAYS_LIMIT
+	if len(stats) < DAYS_LIMIT {
+		limit = len(stats)
+	}
+	fmt.Printf("Top %d busiest days:\n", limit)
+	for _, s := range stats[:limit] {
+		fmt.Printf("  %s — %d reminders\n", s.day, s.count)
+	}
 }
