@@ -6,6 +6,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"time"
 )
 
 // RRule holds parsed recurrence rule fields from an RRULE line.
@@ -23,6 +24,26 @@ type Reminder struct {
 	Summary string
 	DtStart string
 	RRule   *RRule
+}
+
+// Occurrences returns all dates this reminder falls on in [windowStart, windowEnd].
+func (r *Reminder) Occurrences(windowStart time.Time, windowEnd time.Time) []time.Time {
+	dtStart, err := parseDtStart(r.DtStart)
+	if err != nil {
+		return nil
+	}
+
+	// Normalize to midnight so comparisons are day-based.
+	dtStart = time.Date(dtStart.Year(), dtStart.Month(), dtStart.Day(), 0, 0, 0, 0, time.UTC)
+
+	if r.RRule == nil {
+		if !dtStart.Before(windowStart) && !dtStart.After(windowEnd) {
+			return []time.Time{dtStart}
+		}
+		return nil
+	}
+
+	return findOccurrences(dtStart, r.RRule, windowStart, windowEnd)
 }
 
 func (r *Reminder) String() string {
@@ -109,4 +130,14 @@ func parseRRule(value string) (*RRule, error) {
 		return nil, fmt.Errorf("RRULE missing FREQ")
 	}
 	return r, nil
+}
+
+// parseDtStart parses an ICS DTSTART value into a time.Time (date-only or datetime).
+func parseDtStart(s string) (time.Time, error) {
+	for _, layout := range []string{"20060102T150405Z", "20060102T150405", "20060102"} {
+		if t, err := time.Parse(layout, s); err == nil {
+			return t, nil
+		}
+	}
+	return time.Time{}, fmt.Errorf("cannot parse DTSTART %q", s)
 }

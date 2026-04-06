@@ -10,7 +10,7 @@ A Go CLI tool that parses Apple Reminders exported as ICS files, maps recurring 
 
 ```bash
 # Run the program (pass path to folder containing .ics files)
-go run main.go ./reminders
+go run . ./reminders
 
 # Build
 go build ./
