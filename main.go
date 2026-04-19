@@ -75,4 +75,25 @@ func main() {
 	for _, s := range stats[:limit] {
 		fmt.Printf("  %s — %d reminders\n", s.day, s.count)
 	}
+
+	// Calculate and print distribution statistics.
+	counts := make([]int, len(stats))
+	for i, s := range stats {
+		counts[i] = s.count
+	}
+	ds := calcStats(counts)
+	fmt.Printf("\nDistribution statistics (%d days with reminders):\n", ds.Total)
+	fmt.Printf("  Mean:   %.2f reminders/day\n", ds.Mean)
+	fmt.Printf("  Median: %.2f reminders/day\n", ds.Median)
+	fmt.Printf("  Mode:   %d reminders/day\n", ds.Mode)
+	fmt.Printf("  StdDev: %.2f\n", ds.StdDev)
+	fmt.Printf("  Within 1 StdDev (%.2f–%.2f): %d days (%.1f%%)\n",
+		ds.Mean-ds.StdDev, ds.Mean+ds.StdDev,
+		ds.Within1StdDev, 100*float64(ds.Within1StdDev)/float64(ds.Total))
+	fmt.Printf("  Within 2 StdDev (%.2f–%.2f): %d days (%.1f%%)\n",
+		ds.Mean-2*ds.StdDev, ds.Mean+2*ds.StdDev,
+		ds.Within2StdDev, 100*float64(ds.Within2StdDev)/float64(ds.Total))
+	fmt.Printf("  Within 3 StdDev (%.2f–%.2f): %d days (%.1f%%)\n",
+		ds.Mean-3*ds.StdDev, ds.Mean+3*ds.StdDev,
+		ds.Within3StdDev, 100*float64(ds.Within3StdDev)/float64(ds.Total))
 }
