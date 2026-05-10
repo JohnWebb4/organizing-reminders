@@ -96,4 +96,33 @@ func main() {
 	fmt.Printf("  Within 3 StdDev (%.2f–%.2f): %d days (%.1f%%)\n",
 		ds.Mean-3*ds.StdDev, ds.Mean+3*ds.StdDev,
 		ds.Within3StdDev, 100*float64(ds.Within3StdDev)/float64(ds.Total))
+
+	// A* optimization: find shifts that minimize days above mean+stddev.
+	fmt.Printf("\nRunning A* optimization...\n")
+	suggestions, optimizedCounts := Optimize(reminders, windowStart, windowEnd)
+
+	if len(suggestions) == 0 {
+		fmt.Println("Schedule is already well-distributed — no changes suggested.")
+	} else {
+		fmt.Printf("\nOptimization suggestions (%d change(s)):\n", len(suggestions))
+		for _, s := range suggestions {
+			fmt.Printf("  %q: %s → %s\n", s.Reminder.Summary, s.From, s.To)
+		}
+
+		var optVals []int
+		for _, c := range optimizedCounts {
+			if c > 0 {
+				optVals = append(optVals, int(c))
+			}
+		}
+		if len(optVals) > 0 {
+			od := calcStats(optVals)
+			fmt.Printf("\nProjected distribution (%d days with reminders):\n", od.Total)
+			fmt.Printf("  Mean:   %.2f reminders/day\n", od.Mean)
+			fmt.Printf("  StdDev: %.2f\n", od.StdDev)
+			fmt.Printf("  Within 1 StdDev (%.2f–%.2f): %d days (%.1f%%)\n",
+				od.Mean-od.StdDev, od.Mean+od.StdDev,
+				od.Within1StdDev, 100*float64(od.Within1StdDev)/float64(od.Total))
+		}
+	}
 }
